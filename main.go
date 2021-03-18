@@ -11,7 +11,7 @@ import (
 
 var addr = flag.String("addr", "0.0.0.0:8080", "WebSocket server address")
 
-var minRange = flag.Float64("min-range", 1000, "The minimum range")
+var minRange = flag.Float64("min-range", 500, "The minimum range")
 
 var alpha = flag.Float64("alpha", 0.1, "The histogram decay alpha")
 
