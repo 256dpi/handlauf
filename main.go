@@ -6,12 +6,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/VividCortex/gohistogram"
+	"github.com/rcrowley/go-metrics"
 )
 
 var addr = flag.String("addr", "0.0.0.0:8080", "WebSocket server address")
 
 var minRange = flag.Float64("min-range", 1000, "The minimum range")
+
+var alpha = flag.Float64("alpha", 0.1, "The histogram decay alpha")
 
 var threshold = flag.Float64("threshold", 0, "The threshold for on/off values")
 
@@ -47,9 +49,9 @@ func process() {
 	timeout := time.Second / time.Duration(*freq)
 
 	// prepare histograms
-	var histogram []gohistogram.Histogram
+	var histogram []metrics.Sample
 	for i := 0; i < 12; i++ {
-		histogram = append(histogram, gohistogram.NewHistogram(80))
+		histogram = append(histogram, metrics.NewExpDecaySample(80, *alpha))
 	}
 
 	for {
@@ -70,12 +72,11 @@ func process() {
 		// calculate result
 		for i, v := range s {
 			// add to histogram
-			histogram[i].Add(v)
-			histogram[i].Add(v)
+			histogram[i].Update(int64(v))
 
 			// get quantiles
-			min := histogram[i].Quantile(0.15)
-			max := histogram[i].Quantile(0.95)
+			min := histogram[i].Percentile(0.15)
+			max := histogram[i].Percentile(0.95)
 
 			// adjust range
 			if max-min < +*minRange {
